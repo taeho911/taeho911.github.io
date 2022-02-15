@@ -1,0 +1,9 @@
+1. recursion과 non-recursion의 장단점
+
+2. pyinstaller의 동작방식과 성능 개선 방법
+
+3. python의 장단점
+
+4. permutation 알고리즘
+
+5. tail-call
