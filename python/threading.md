@@ -1,4 +1,4 @@
-# Threading
+# Threading of Python
 
 ## 파이썬의 GIL
 파이썬은 멀티쓰레딩을 지원하지만 동시에 실행가능한 쓰레드는 하나뿐이다.
