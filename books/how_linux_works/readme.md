@@ -32,7 +32,7 @@
 ```
 Disks -> Partition Table -> Partitions -> Filesystem Data Structures -> File Data
 ```
-* 커널은 각 파티션을 하나의 block device로 표현한다.
+* 커널은 각 파티션을 하나의 block device (/dev/sda1)로 표현한다.
 * 파티션들의 정보를 담고 있는 것이 partition table이다.
 
 ## Partition table 종류
@@ -56,3 +56,16 @@ Disks -> Partition Table -> Partitions -> Filesystem Data Structures -> File Dat
   - Apple의 표준 filesystem
 * ISO 9660
   - CD-ROM의 표준 filesystem
+
+## LVM (Logical Volume Manager)
+기존의 block device -> filesystem의 계층구조가 가지는 단점들을 보완하기 위해 추가된 추상계층이다.
+
+기존의 계층구조는 초기 디스크 설치 이후에 디스크를 업그레이드하거나, 추가 디스크를 설치하거나, 파티션 혹은 파일시스템을 추가할 때 boot loader의 수정, 재부팅, 재마운트 등의 작업이 필요하게 된다.
+
+이것은 디스크 공간 관리의 유연성을 떨어뜨리게 되고, 이러한 문제점들을 해결하기 위해 LVM이 등장하게 된다.
+
+LVM으로 인해 physical volume -> volume group -> logical volume의 계층구조가 만들어졌다.
+
+대부분의 LVM 베이스 시스템은 하나의 PV와 두개의 LV(root and swap)를 가진다.
+
+LV는 block device이며 보통 filesystem 혹은 swap signature를 가지고 있다.
