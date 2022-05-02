@@ -69,3 +69,122 @@ LVM으로 인해 physical volume -> volume group -> logical volume의 계층구�
 대부분의 LVM 베이스 시스템은 하나의 PV와 두개의 LV(root and swap)를 가진다.
 
 LV는 block device이며 보통 filesystem 혹은 swap signature를 가지고 있다.
+
+# Kernel Boots
+1. BIOS (Basic IO System) or boot firmware loading
+2. Run boot loader
+3. Kernel initialization
+    - CPU inspection
+    - Memory inspection
+    - Device bus discovery
+    - Auxiliary kernel subsystem setup (network and the like)
+    - Root filesystem mount
+    - Starts a program called *_init_* with a process ID of 1
+4. User space start
+    - init (systemd)
+    - Essential low-level services (udevd, syslogd)
+    - Network configuration
+    - Mid/high-level services (cron, printing)
+    - Login prompts, GUIs, high-level applications
+
+## Kernel parameters
+커널을 시작할 때 커널의 행동을 제어할 수 있는 각종 파라미터를 정의할 수 있다.
+
+현재 시스템에 적용된 파라미터를 보려면 cat /proc/cmdline을 실행하면 된다.
+
+커널의 boot parameter를 정의하는 방법은 boot loader 실행 화면에서 일시적으로 정의하던가, 해당 운영체제가 지원하는 영구적 정의방법에 따르면 된다.
+(Ubuntu의 경우 /etc/default/grub 파일을 수정함으로써 영구적으로 커널 파라미터를 수정할 수 있다.)
+
+## Boot loaders
+* GRUB
+* LILO
+* SYSLINUX
+* LOADLIN
+* systemd-boot
+* coreboot
+* Linux Kernel EFISTUB
+* efilinux
+
+# User Space Starts
+User space의 시작은 아래와 같은 순서로 진행된다.
+1. init (systemd)
+2. Essential low-level services (udevd, syslogd)
+3. Network configuration
+4. Mid/high-level services (cron, printing)
+5. Login prompts, GUIs, high-level applications
+
+## init
+init이란 user-space 프로그램의 하나로 시스템의 기본적인 service processes를 시작하거나 정지시키기 위한 목적을 지닌다.
+
+### init의 종류
+* Sys-V (sys-five)
+  - 전통적 init 프로그램으로 RHEL7과 debian8 이전에서 찾아볼 수 있다.
+* Upstart
+  - 전통적 init 프로그램으로 ubuntu15.04 이전에서 찾아볼 수 있다.
+* systemd
+  - 현대 linux의 표준 init 프로그램이다.
+
+### systemd
+systemd는 *_unit_*단위로 작업을 진행한다.
+이때 unit이란 하나의 goal이며, 일련의 작업명령(daemon의 실행 등)을 포함하고 있다.
+unit은 다른 unit들을 dependencies로 가질 수 있기에 systemd는 dependency graphs의 계층구조에 따라 unit을 activate 해나간다.
+
+unit에는 대표적으로 다음의 4가지 타입이 존재한다.
+1. Service units
+2. Target units
+3. Socket units
+4. Mount units
+
+해당 unit이 무엇이고 어떻게 실행시키거나, 재실행시켜야 하는지 정의하고 있는 파일이 init file이다. init file은 크게 [Unit], [Service], [Install], [Socket], [Mount], [Automount], [Swap], [Path], [Timer], [Slice] 등의 영역으로 나뉜다. 시스템에 unit을 수동적으로 추가하고 싶을 경우 /etc/systemd/system에 자신이 만든 unit file을 배치시켜놓으면 된다. (mauanl addition: not recommended)
+```
+# /lib/systemd/system/docker.service
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target firewalld.service containerd.service
+Wants=network-online.target
+Requires=docker.socket containerd.service
+
+[Service]
+Type=notify
+# the default is not to use systemd for cgroups because the delegate issues still    
+# exists and systemd currently does not support the cgroup feature set required      
+# for containers run by docker
+ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock     
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutSec=0
+RestartSec=2
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```
+# 현재의 unit 정보를 습득
+$ systemctl list-units
+
+# 대상 unit 정보를 습득
+$ systemctl status <unit>
+
+# 대상 unit 시작, 정지, 재시작
+$ systemctl start <unit>
+$ systemctl stop <unit>
+$ systemctl restart <unit>
+
+# unit configuration 파일을 수정했을 경우 재로드
+$ systemctl reload <unit>
+
+# 전 unit configuration 파일을 재로드
+$ systemctl daemon-reload
+
+# 현재 jobs 정보를 습득
+# job: unit의 activate, reactivate and restart
+$ systemctl list-jobs
+```
+
+* 참고용 man pages
+  - systemd.unit
+  - systemd.exec
+  - systemd.socket
+  - systemd.path
