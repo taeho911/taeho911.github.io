@@ -188,3 +188,53 @@ $ systemctl list-jobs
   - systemd.exec
   - systemd.socket
   - systemd.path
+
+# Logging, System Time, Batch jobs, and Users
+## Logging
+systemd를 사용하는 대부분의 distribution은 journald이라는 systemd 내장 로그 daemon을 이용하여 시스템 로그를 남긴다.
+본인의 os가 journal을 쓰고 있는지는 journalctl 커맨드를 실행해보면 알 수 있다.
+
+journald을 쓰지 않는 전통적인 os는 syslogd를 쓴다.
+
+```
+# 전체 log 습득
+$ journalctl
+
+# 커널 log 습득
+$ journalctl -k
+
+# 시간역순 log 습득
+$ journalctl -r
+
+# 기타 필터링
+# -u: unit
+# -S: since
+# -U: until
+# -g: global regex
+# -b: boot
+# -p: priority (0: most important ~ 7)
+$ journalctl _PID=3454
+$ journalctl -u docker.service
+$ journalctl -S -4h
+$ journalctl -S 06:00:00
+$ journalctl -S 2022-05-03 -U 2022-05-04
+$ journalctl -S '2022-05-03 07:00:00'
+$ journalctl -g <pattern>
+$ journalctl -p 3
+$ journalctl -p 2..3
+
+# 가장 최근의 boot 로그를 출력
+$ journalctl -b -1
+
+# 모든 boot ID를 출력
+$ journalctl --list-boots
+
+# _SYSTEMD_UNIT 필드의 모든 값들 출력
+$ journalctl -F _SYSTEMD_UNIT
+
+# 모든 필드 출력
+$ journalctl -N
+
+# 로그 following
+$ journalctl -f
+```
