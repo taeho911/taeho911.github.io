@@ -291,3 +291,103 @@ docker:x:998:taeho
 * user list (optional)
 
 본인이 소속되어 있는 group은 groups 커맨드로 알 수 있다.
+
+## Batch Jobs
+Linux에서 반복적인 배치를 돌리는 방법은 크게 cron, systemd timer unit 두가지가 존재한다.
+
+### cron
+cron job을 추가하려면 crontab file (/var/spool/cron/crontabs/ or /etc/cron.d/)에 엔트리를 넣으면 된다.
+엔트리는 한줄로 쓰며, 공백문자를 딜리미터로 6가지 필드를 가진다.
+* Minute (0~59)
+* Hour (0~23)
+* Day of month (1~31)
+* Month (1~12)
+* Day of week (0~7: 0, 7은 일요일)
+* User (For some distributions)
+* Command
+
+asterisk는 모든 값과 매칭된다.
+```
+# 매일 9:15 spmake를 실행
+15 09 * * * /home/juser/bin/spmake
+
+# 매월 15, 30일에 spmake를 실행
+15 09 15,30 * * /home/juser/bin/spmake
+
+# 매일 9:15 root user로 spmake를 실행
+15 09 * * * root /home/juser/bin/spmake
+```
+
+```
+# crontab file에 엔트리 추가
+$ crontab <file>
+
+# cron job 리스트 출력
+$ crontab -l
+
+# cron job 삭제
+$ crontab -r <job>
+```
+
+* 참고용 man pages
+  - crontab
+
+### systemd timer unit
+systemd timer unit은 timer unit과 service unit을 쌍으로 가진다.
+해당 unit을 정의한 unit file을 /etc/systemd/system에 배치함으로써 엔트리가 가능하다.
+```
+>>> /etc/systemd/systemloggertest.timer
+[Unit]
+Description=Example
+
+[Timer]
+OnCalander=*-*-* *:00,20,40
+Unit=loggertest.service
+
+[Install]
+WantedBy=timers.target
+```
+```
+>>> /etc/systemd/systemloggertest.service
+[Unit]
+Description=Example
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger -p local3.debug I am a logger
+```
+
+<!-- systemd timer unit은 cron과 비교해 다음과 같은 장점들을 가진다.
+  - 복수의 ExecStart 커맨드를 정의할 수 있다.
+  - Wants, Before 등의 활용을 통해 의존성 제어가 쉽다.
+  - journal에 보다 나은 start, end time에 대한 로그가 남는다. -->
+
+* 참고용 man pages
+  - systemd.time
+
+### One-Time Task
+단발성 job을 예약하고 싶을 경우에는 at 커맨드를 활용한다.
+```
+# 2022-01-31 22:30 myjob과 echo를 실행
+# 문서 편집의 완료는 ctrl+D
+$ at 22:30 31.01.22
+at> myjob
+at> echo "Hello World"
+at> <EOT>
+job 2 at Wed May  4 14:50:00 2022
+
+# 큐잉된 job 출력
+$ atq
+
+# 큐잉된 job 삭제
+$ atrm <job ID>
+```
+
+at 커맨드 대신 쓸 수 있는 것이 systemd-run 커맨드다.
+```
+# 2022-01-31 22:30 echo를 실행
+$ systemd-run --on-calendar='2022-01-31 22:30' /bin/echo Hello World
+
+# job 출력
+$ systemctl list-timers
+```
