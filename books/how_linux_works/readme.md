@@ -238,3 +238,56 @@ $ journalctl -N
 # 로그 following
 $ journalctl -f
 ```
+
+* 참고용 man pages
+  - journald.conf
+  - syslog
+  - rsyslog.conf
+
+## Users
+kernel 레벨에서 user는 숫자(userid)이지만 user space 관점에서 user는 문자열(username)로 되어있다.
+userid와 username을 맵핑하고 있는 파일이 passwd(/etc/passwd)다.
+해당 파일은 유저에 대한 7가지 정보를 담고 있다.
+```
+root:x:0:0:root:/root:/bin/bash
+sshd:x:112:65534::/run/sshd:/usr/sbin/nologin
+systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
+taeho:x:1000:1000:taeho:/home/taeho:/bin/bash
+lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false
+```
+* username
+* encrypted password
+  - x: encrypted password는 shadow(/etc/shadow) 파일에 있음
+  - *: 로그인 불가능한 user
+  - blank: password 없이 로그인 가능한 user
+* userid
+* groupid
+* user's real name
+* user's home directory
+* user's shell
+
+Linux에는 2가지 특별한 user가 존재한다.
+1. superuser
+    - 언제나 UID=0, GID=0
+2. pseudo user
+    - 로그인이 불가능한 user
+    - daemon 등이 해당
+    - security issue로 생성하는 user
+
+user들은 group에 속하게 되는데, group은 /etc/group 파일에서 관리된다.
+Linux는 새로운 user가 생성될 때마다 해당 user의 username과 동일한 group을 생성한다.
+```
+root:x:0:
+ssh:x:114:
+landscape:x:115:
+lxd:x:116:taeho
+systemd-coredump:x:999:
+taeho:x:1000:
+docker:x:998:taeho
+```
+* group name
+* group password
+* groupid
+* user list (optional)
+
+본인이 소속되어 있는 group은 groups 커맨드로 알 수 있다.
