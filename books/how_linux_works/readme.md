@@ -183,11 +183,13 @@ $ systemctl daemon-reload
 $ systemctl list-jobs
 ```
 
+```
 * 참고용 man pages
   - systemd.unit
   - systemd.exec
   - systemd.socket
   - systemd.path
+```
 
 # Logging, System Time, Batch jobs, and Users
 ## Logging
@@ -239,10 +241,12 @@ $ journalctl -N
 $ journalctl -f
 ```
 
+```
 * 참고용 man pages
   - journald.conf
   - syslog
   - rsyslog.conf
+```
 
 ## Users
 kernel 레벨에서 user는 숫자(userid)이지만 user space 관점에서 user는 문자열(username)로 되어있다.
@@ -292,6 +296,22 @@ docker:x:998:taeho
 
 본인이 소속되어 있는 group은 groups 커맨드로 알 수 있다.
 
+### Process Ownership
+Linux process에는 ownership이라는게 있다.
+크게 ruid(Real User ID), euid(Effective User ID), suid(Saved User ID)가 그것이다.
+* ruid: 실제 process를 소유하고 있는 user
+  - 해당 process를 kill 할 수 있는 권한이 있다.
+* euid: process를 대신해서 실행하는 user (sudo, ping)
+* suid: process가 실행중에 user switch를 하게 되는 대상 user
+
+대부분의 setuid를 이용하는 많은 프로그램들(sudo)은 side effect를 방지하기 위해 euid 뿐만 아니라 ruid도 변경하는 경우가 많다.
+대표적으로 sudo가 그러한데, 이 때문에 sudo로 실행한 process를 일반 유저로 kill 할 수 없다.
+
+```
+* 참고용 man pages
+  - setuid(2)
+```
+
 ## Batch Jobs
 Linux에서 반복적인 배치를 돌리는 방법은 크게 cron, systemd timer unit 두가지가 존재한다.
 
@@ -329,8 +349,10 @@ $ crontab -l
 $ crontab -r <job>
 ```
 
+```
 * 참고용 man pages
   - crontab
+```
 
 ### systemd timer unit
 systemd timer unit은 timer unit과 service unit을 쌍으로 가진다.
@@ -362,8 +384,10 @@ ExecStart=/usr/bin/logger -p local3.debug I am a logger
   - Wants, Before 등의 활용을 통해 의존성 제어가 쉽다.
   - journal에 보다 나은 start, end time에 대한 로그가 남는다. -->
 
+```
 * 참고용 man pages
   - systemd.time
+```
 
 ### One-Time Task
 단발성 job을 예약하고 싶을 경우에는 at 커맨드를 활용한다.
@@ -390,4 +414,50 @@ $ systemd-run --on-calendar='2022-01-31 22:30' /bin/echo Hello World
 
 # job 출력
 $ systemctl list-timers
+```
+
+# Processes and Resource Utilization
+```
+# Tracking processes
+$ ps
+$ top
+
+# Finding open files
+$ lsof
+$ lsof +D <directory>
+$ lsof -p <pid>
+
+# Tracing system calls, library calls
+# 프로그램 실행 순간에 일어난 일들을 디버깅할때 유용하다.
+$ strace <command>
+$ ltrace
+
+# Viewing threads
+$ ps m
+$ ps m -o pid,tid,command
+
+# Measuring CPU time
+$ top -p <pid> [-p <pid> ...]
+$ time <command>
+```
+
+## Process Priority and Nice Value
+각 프로세스에는 priority(PR)와 nice value(NI)라는 것이 존재한다.
+kernel은 다음 CPU time을 할당할 프로세스를 정하기 위해 이 두 수치를 더한 값을 이용한다.\
+각각의 수치는 -20 ~ 20의 값을 가진다.
+kernel은 CPU time량과 process consume을 고려하여 프로그램 실행중에 PR을 변경한다.
+user는 renice 커맨드를 통해 NI를 수정할 수 있다. ($ renice 20 pid)
+
+## Load Average
+Load average는 CPU 성능을 측정하는 기준의 하나로 *_한 시점에 CPU를 사용할 수 있는 프로세스의 수_*를 의미한다.
+이는 현재 실행중인 프로세스와 CPU를 사용하기 위해 대기하고 있는 프로세스 모두를 포함한다.
+키보드나 마우스, 네이트워크와 같이 input이 오기를 기다리고 있는 프로세스는 load average에 포함되지 않는다.
+
+Load average는 uptime 커맨드를 통해 알 수 있다.
+```
+# 1분, 5분, 15분 동안의 load average를 나타낸다.
+# 이 수치들은 CPU 코어의 갯수를 고려하지 않는다.
+# 따라서 만약 load average가 1이고 코어가 2개라면 한 시점에서 평균적으로 가동 가능한 코어는 1개라는 이야기가 된다.
+$ uptime
+08:46:59 up  3:33,  1 user,  load average: 0.00, 0.00, 0.00
 ```
