@@ -439,6 +439,16 @@ $ ps m -o pid,tid,command
 # Measuring CPU time
 $ top -p <pid> [-p <pid> ...]
 $ time <command>
+
+# Monitoring memory status
+$ free
+$ cat /proc/meminfo
+
+# Further more monitoring tools
+$ vmstat
+$ iostat
+$ iotop
+$ pidstat
 ```
 
 ## Process Priority and Nice Value
@@ -460,4 +470,47 @@ Load average는 uptime 커맨드를 통해 알 수 있다.
 # 따라서 만약 load average가 1이고 코어가 2개라면 한 시점에서 평균적으로 가동 가능한 코어는 1개라는 이야기가 된다.
 $ uptime
 08:46:59 up  3:33,  1 user,  load average: 0.00, 0.00, 0.00
+```
+
+## Control Groups (cgroups)
+cgroup이란 linux kernel feature 중 하나로 특정 process 집단이 소비 가능한 리소스의 양을 제한한다.
+해당 리소스의 소비량을 제어하는 것을 controller라 하며, CPU, memory 등의 리소스에 대하여 각각 controller가 존재한다.
+systemd가 cgroup을 관리하지만 cgroup은 kernel space에 존재하며, systemd에 의존하지 않는다.
+
+현재 cgroup에는 v1과 v2 두가지 버전이 존재하며, 대표적인 차이점은 아래와 같다.
+  - v1: 각 타입의 controller는 cgroup 세트를 갖는다. 한 프로세스는 각 controller마다 하나의 cgroup에 참여할 수 있다. 즉, 한 프로세스가 여러 cgroup에 참여 가능하다.
+  - v2: 한 프로세스는 오로지 하나의 cgroup에 참여 가능하다. cgroup마다 다른 타입의 controller 셋을 정의할 수 있다.
+
+즉, v1에서는 cgroup이 controller 안에 포함되며, v2에서는 controller가 cgroup 안에 포함된다.
+
+kernel과 상호작용하던 기존의 system call interface와는 달리 cgroup은 filesystem (/sys/fs/cgroup)을 통해 접근된다.
+또한 cgroup은 /sys/fs/cgroup/ 밑의 디렉토리 구조에 의해 결정되며, 계층적 구조를 가진다.
+따라서 cgroup 디렉토리 밑에 새로운 서브디렉토리를 만들면 kernel이 자동적으로 인터페이스 파일을 생성한다.
+
+```
+# 프로세스가 소속되어 있는 cgroup 출력
+# 각 행은 하나의 cgroup을 나타낸다.
+# 1: cgroup v1의 관리전용 cgroup
+# 2~12: cgroup v1의 cgroups
+# 0: cgroup v2
+$ cat /proc/<pid>/cgroup
+12:net_cls,net_prio:/
+11:cpuset:/
+10:rdma:/
+9:perf_event:/
+8:memory:/user.slice/user-1000.slice/session-1.scope
+7:freezer:/
+6:pids:/user.slice/user-1000.slice/session-1.scope
+5:devices:/user.slice
+4:blkio:/user.slice
+3:hugetlb:/
+2:cpu,cpuacct:/user.slice
+1:name=systemd:/user.slice/user-1000.slice/session-1.scope
+0::/user.slice/user-1000.slice/session-1.scope
+
+# cgroup에 process 추가
+$ echo <pid> >> /sys/fs/cgroup/cgroup.procs
+
+# 최대 참가가능 프로세스 수 변경
+$ echo <The number of processes> > /sys/fs/cgroup/pids.max
 ```
