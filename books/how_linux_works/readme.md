@@ -514,3 +514,22 @@ $ echo <pid> >> /sys/fs/cgroup/cgroup.procs
 # 최대 참가가능 프로세스 수 변경
 $ echo <The number of processes> > /sys/fs/cgroup/pids.max
 ```
+
+# Network
+## TCP/IP Model
+* Application layer (protocol layer)
+  - TLS, HTTP, FTP ...
+* Transport layer
+  - TCP, UDP
+* Internet layer (network layer)
+  - IP
+* Physical layer
+  - ethernet, modem ...
+
+```
+# Viewing IP addresses
+$ ip address show
+
+# Viewing routing table
+$ ip route show
+```
